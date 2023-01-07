@@ -5,6 +5,7 @@ from config import host, user, password, db_name
 
 
 def insertIntoDatabase(in_sub_name, in_subs_code, category1, category2):
+    connection=0
     try:
         connection = psycopg2.connect(
             host=host,
@@ -15,7 +16,7 @@ def insertIntoDatabase(in_sub_name, in_subs_code, category1, category2):
         with connection.cursor() as cursor:
             sql1 = "INSERT INTO subscriptions(subs_name, subs_code, category1, category2) VALUES (%s, %s,%s,%s)"
             cursor.execute(sql1, (in_sub_name, in_subs_code, category1, category2))
-            
+            #print(sql1)
         connection.commit()
             
     except Exception as _ex:
