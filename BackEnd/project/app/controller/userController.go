@@ -18,7 +18,7 @@ var body struct {
 	UserEmail        string `json:"user_email"`
 	Password         string `json:"user_password"`
 	ActivationStatus string `json:"user_activation_status"`
-	Status           string `json:"status"`
+	Status           int    `json:"status"`
 }
 
 type Controller struct {

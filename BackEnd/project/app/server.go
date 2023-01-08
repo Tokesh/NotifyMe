@@ -28,7 +28,10 @@ func main() {
 		user.POST("/login", Controller.Login)
 		user.GET("/", Controller.Validate)
 	}
-
+	events := server.Group("/event")
+	{
+		events.GET("/:id", Controller.Validate, Controller.FindUserEvents)
+	}
 	server.Run()
 
 }
