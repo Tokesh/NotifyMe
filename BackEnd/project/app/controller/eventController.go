@@ -29,6 +29,9 @@ func (c *Controller) FindUserEvents(ctx *gin.Context) {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
+	//ctx.JSON(http.StatusOK, []entity.Event{
+	//	detailedEvents,
+	//})
 	ctx.JSON(http.StatusOK, map[string]interface{}{
 		"events": detailedEvents,
 	})

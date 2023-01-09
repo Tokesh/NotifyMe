@@ -21,6 +21,10 @@ var body struct {
 	Status           int    `json:"status"`
 }
 
+type tokenBody struct {
+	Token string `json:"token"`
+}
+
 type Controller struct {
 	Service services.Service
 }
@@ -130,4 +134,42 @@ func (c *Controller) Validate(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, map[string]interface{}{
 		"message": user,
 	})
+}
+
+func (c *Controller) UserId(ctx *gin.Context) {
+	tokeni := tokenBody{}
+	err := ctx.BindJSON(&tokeni)
+	if err != nil {
+		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	tokenString := tokeni.Token
+	fmt.Println(tokeni)
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte("sdff3234sr2134rewt3t2sra"), nil
+	})
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+			utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+			return
+		}
+		user, err := c.Service.FindUserByIdService(int(claims["sub"].(float64)))
+		if user.UserID == 0 {
+			utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+			return
+		}
+		ctx.JSON(http.StatusOK, map[string]interface{}{
+			"user_id": user.UserID,
+		})
+	} else {
+		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
 }

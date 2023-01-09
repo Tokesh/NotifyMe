@@ -1,0 +1,9 @@
+<h1>Home page</h1>
+<p>Your UserID: {{user_id}}</p>
+
+<div>
+  <div *ngFor="let event of eventss">
+    <p> {{event.event_name }}, {{event.event_timestart}}, {{event.event_timeend}}</p>
+
+  </div>
+</div>
