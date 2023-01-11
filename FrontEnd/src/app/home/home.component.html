@@ -2,8 +2,24 @@
 <p>Your UserID: {{user_id}}</p>
 
 <div>
-  <div *ngFor="let event of eventss">
-    <p> {{event.event_name }}, {{event.event_timestart}}, {{event.event_timeend}}</p>
 
+  <div *ngIf="pastEvents.length > 0">
+    <p>Past events:</p>
+    <div *ngFor="let event of pastEvents" >
+      <ul>
+        <li> {{event.event_name }}<br>Starts: {{event.event_timestart | date:'short':'+06'}}<br> Ends: {{event.event_timeend | date:'short':'+06'}}</li>
+      </ul>
+    </div>
   </div>
+
+  <div *ngIf="futureEvents.length > 0">
+    <p>Future Events:</p>
+    <div *ngFor="let event of futureEvents">
+
+      <ul>
+        <li> {{event.event_name }}<br>Starts: {{event.event_timestart | date:'short':'+06'}}<br> Ends: {{event.event_timeend | date:'short':'+06'}}</li>
+      </ul>
+    </div>
+  </div>
+
 </div>

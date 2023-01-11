@@ -14,17 +14,7 @@ func (c *Controller) FindUserEvents(ctx *gin.Context) {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	subs, err := c.Service.SelectUserSubscription(userIdInt)
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-	events, err := c.Service.SelectEventBySubId(subs)
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-	detailedEvents, err := c.Service.SelectEventsByIdRepo(events)
+	detailedEvents, err := c.Service.SelectEventsByUserId(userIdInt)
 	if err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return

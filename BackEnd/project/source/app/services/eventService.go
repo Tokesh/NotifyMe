@@ -8,3 +8,6 @@ func (s Service) SelectEventBySubId(subs []int) ([]string, error) {
 func (s Service) SelectEventByEventIds(eventIds []string) ([]entity.Event, error) {
 	return s.SelectEventsByIdRepo(eventIds)
 }
+func (s Service) SelectEventsByUserId(userId int) ([]entity.Event, error) {
+	return s.SelectEventsByUserIdRepo(userId)
+}

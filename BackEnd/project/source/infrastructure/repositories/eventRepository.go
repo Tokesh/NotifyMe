@@ -54,3 +54,24 @@ func (r *Repository) SelectEventsByIdRepo(eventIds []string) ([]entity.Event, er
 	}
 	return events, nil
 }
+
+func (r *Repository) SelectEventsByUserIdRepo(userId int) ([]entity.Event, error) {
+	q := `
+			select event_id, event_name, event_timestart, event_timeend, event_result from user_subscription
+				left join subscriptions on user_subscription.subs_id = subscriptions.subs_id
+				left join event_sub on subscriptions.subs_id = event_sub.subs_id
+				left join events e on event_sub.event_id = e.events_id
+				where user_id = $1
+		`
+	events := make([]entity.Event, 0)
+	rows, err := r.client.Query(context.TODO(), q, userId)
+	for rows.Next() {
+		var event entity.Event
+		err = rows.Scan(&event.Id, &event.Name, &event.TimeStart, &event.TimeEnd, &event.Result)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, event)
+	}
+	return events, nil
+}
