@@ -1,11 +1,11 @@
 ## About The Project
 
 
-The idea is that the user specifies subscriptions on which they want to receive notifications so as not to miss important events
+* The idea is that the user specifies subscriptions on which they want to receive notifications so as not to miss important events
 <br>
-There are several categories: sports, movies, financial events, etc
+* There are several categories: sports, movies, financial events, etc
 <br>
-Every day, users are notified if there is an event on that day
+* Every day, users are notified if there is an event on that day
 
 
 ### Built With
