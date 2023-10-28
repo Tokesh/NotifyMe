@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+
 	"github.com/gin-gonic/gin"
+
 	"project/app/controller"
 	"project/source/app/services"
 	"project/source/domain/entity"
@@ -20,7 +22,7 @@ var (
 	Controller            = controller.New(*service)
 )
 
-func main() {
+func main1() {
 	server := gin.Default()
 	//server.Use(cors.New(cors.Config{
 	//	AllowOrigins: []string{"http://localhost:4200"},

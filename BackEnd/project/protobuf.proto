@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ProStoreGolang;
+
+option go_package = "your/go/package";
+// Определение сообщения для входа
+message YourLoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+// Определение сообщения ответа на вход
+message YourLoginResponse {
+  string message = 1;
+}
+
+// Определение сервиса
+service YourService {
+  rpc Login (YourLoginRequest) returns (YourLoginResponse);
+}
