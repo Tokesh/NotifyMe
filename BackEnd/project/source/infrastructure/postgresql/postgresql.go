@@ -20,7 +20,7 @@ type Client interface {
 }
 
 func NewClient(ctx context.Context, maxAttempts int, sc entity.StorageConfig) (pool *pgxpool.Pool, err error) {
-	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", "postgres", "Counter2727", "localhost", "5432", "postgres")
+	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", "postgres", "postgres", "localhost", "5432", "postgres")
 	// if you want to use docker - uncomment bottom lane
 	//dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s", "postgres", "tokesh", "db", "5432", "postgres")
 	err = utils.DoWithTries(func() error {

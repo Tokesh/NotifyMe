@@ -19,6 +19,18 @@ func New(client postgresql.Client) Repository {
 	}
 }
 
+// TODO remove functions which not related to userrepo
+type UserRepository interface {
+	CreateUser(user entity.User) error
+	FindUserID(user entity.User) (entity.User, error)
+	FindUserByID(userID int) (entity.User, error)
+	FindUserPasswordRepo(user entity.User) (entity.User, error)
+	SelectUserSubscriptionRepo(userId int) ([]int, error)
+	SelectEventBySubIdsRepo(subs []int) ([]string, error)
+	SelectEventsByIdRepo(eventIds []string) ([]entity.Event, error)
+	SelectEventsByUserIdRepo(userId int) ([]entity.Event, error)
+}
+
 func (r *Repository) CreateUser(user entity.User) error {
 	// username, user_email, user_password, user_activation_status,status
 	q := `
@@ -34,16 +46,15 @@ func (r *Repository) CreateUser(user entity.User) error {
 	return nil
 }
 
-func (r *Repository) FindUserID(user entity.User) entity.User {
+func (r *Repository) FindUserID(user entity.User) (entity.User, error) {
 	q := `
-		SELECT user_id, username from users where username = $1
-	`
+        SELECT user_id, username from users where username = $1
+    `
 	err := r.client.QueryRow(context.TODO(), q, user.Username).Scan(&user.UserID, &user.Username)
 	if err != nil {
-		fmt.Errorf("Creating user impossible to DB", err)
-		return user
+		return user, fmt.Errorf("error creating user in DB: %v", err)
 	}
-	return user
+	return user, nil
 }
 
 func (r *Repository) FindUserByID(user_id int) (entity.User, error) {
@@ -53,21 +64,18 @@ func (r *Repository) FindUserByID(user_id int) (entity.User, error) {
 	user := entity.User{}
 	err := r.client.QueryRow(context.TODO(), q, user_id).Scan(&user.UserID, &user.Username)
 	if err != nil {
-		fmt.Errorf("Creating user impossible to DB", err)
 		return user, err
 	}
 	return user, nil
 }
 
-func (r *Repository) FindUserPasswordRepo(user entity.User) entity.User {
+func (r *Repository) FindUserPasswordRepo(user entity.User) (entity.User, error) {
 	q := `
-		SELECT user_password from users where username = $1
-	`
-	//fmt.Println(r.client.QueryRow(context.TODO(), q, user.Username).Scan(user.Password))
+        SELECT user_password FROM users WHERE username = $1
+    `
 	err := r.client.QueryRow(context.TODO(), q, user.Username).Scan(&user.Password)
 	if err != nil {
-		fmt.Errorf("Creating user impossible to DB", err)
-		return user
+		return user, fmt.Errorf("error finding user password in DB: %v", err)
 	}
-	return user
+	return user, nil
 }

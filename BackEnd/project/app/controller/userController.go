@@ -10,6 +10,7 @@ import (
 	"project/source/app/services"
 	"project/source/domain/entity"
 	"project/source/infrastructure/utils"
+	"regexp"
 	"time"
 )
 
@@ -19,6 +20,14 @@ var body struct {
 	Password         string `json:"user_password"`
 	ActivationStatus string `json:"user_activation_status"`
 	Status           int    `json:"status"`
+}
+
+type SignUpBody struct {
+	Username         string
+	UserEmail        string
+	Password         string
+	ActivationStatus string
+	Status           int
 }
 
 type tokenBody struct {
@@ -35,9 +44,42 @@ func New(service services.Service) Controller {
 	}
 }
 
+func ValidateSignUpBody(body SignUpBody) error {
+	// Проверка имени пользователя
+	if len(body.Username) < 3 || len(body.Username) > 30 {
+		return fmt.Errorf("username must be between 3 and 30 characters")
+	}
+	if !regexp.MustCompile(`^\w+$`).MatchString(body.Username) {
+		return fmt.Errorf("username must be alphanumeric")
+	}
+
+	// Проверка адреса электронной почты
+	if !regexp.MustCompile(`^\S+@\S+\.\S+$`).MatchString(body.UserEmail) {
+		return fmt.Errorf("invalid email format")
+	}
+
+	// Проверка пароля
+	if len(body.Password) < 6 {
+		return fmt.Errorf("password must be at least 6 characters long")
+	}
+
+	// Проверка статуса активации
+	if body.ActivationStatus != "active" && body.ActivationStatus != "inactive" {
+		return fmt.Errorf("invalid activation status")
+	}
+
+	// Проверка статуса (можно добавить конкретные условия в зависимости от вашего приложения)
+
+	return nil
+}
+
 func (c *Controller) SignUp(ctx *gin.Context) {
-	err := ctx.BindJSON(&body)
-	if err != nil {
+	var body SignUpBody
+	if err := ctx.BindJSON(&body); err != nil {
+		utils.NewErrorResponse(ctx, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if err := ValidateSignUpBody(body); err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -68,14 +110,17 @@ func (c *Controller) Login(ctx *gin.Context) {
 
 	user := entity.User{0, body.Username, body.UserEmail,
 		body.Password, body.ActivationStatus, body.Status}
-	user = c.Service.FindUserId(user)
+	user, err = c.Service.FindUserId(user)
 
-	if user.UserID == 0 {
+	if err != nil {
+		utils.NewErrorResponse(ctx, http.StatusNotFound, "User not found or incorrect credentials")
+		return
+	}
+	user, err = c.Service.FindUserPass(user)
+	if err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	user = c.Service.FindUserPass(user)
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
@@ -86,14 +131,14 @@ func (c *Controller) Login(ctx *gin.Context) {
 		"sub": user.UserID,
 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
 	})
-
-	tokenString, err := token.SignedString([]byte("sdff3234sr2134rewt3t2sra"))
-	ctx.SetSameSite(http.SameSiteLaxMode)
-	ctx.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+	tokenString, err := token.SignedString([]byte("sdff32dsadsadsdsds34sr2134rewtFSFSFSFASFASFASFASFASFASFASF3t2sra"))
 	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		utils.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
 
 	ctx.JSON(http.StatusOK, map[string]interface{}{
 		"token": tokenString,

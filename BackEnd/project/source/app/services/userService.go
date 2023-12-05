@@ -6,27 +6,27 @@ import (
 )
 
 type Service struct {
-	repositories.Repository
+	Repository repositories.UserRepository
 }
 
-func NewService(repo *repositories.Repository) *Service {
+func NewService(repo repositories.UserRepository) *Service {
 	return &Service{
-		Repository: *repo,
+		Repository: repo,
 	}
 }
 
 func (s Service) SignUpService(user entity.User) error {
-	return s.CreateUser(user)
+	return s.Repository.CreateUser(user)
 }
 
-func (s Service) FindUserId(user entity.User) entity.User {
-	return s.FindUserID(user)
+func (s Service) FindUserId(user entity.User) (entity.User, error) {
+	return s.Repository.FindUserID(user)
 }
 
-func (s Service) FindUserPass(user entity.User) entity.User {
-	return s.FindUserPasswordRepo(user)
+func (s Service) FindUserPass(user entity.User) (entity.User, error) {
+	return s.Repository.FindUserPasswordRepo(user)
 }
 
 func (s Service) FindUserByIdService(user_id int) (entity.User, error) {
-	return s.FindUserByID(user_id)
+	return s.Repository.FindUserByID(user_id)
 }

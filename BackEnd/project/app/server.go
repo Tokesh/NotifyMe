@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/zsais/go-gin-prometheus"
 	"project/app/controller"
 	"project/source/app/services"
 	"project/source/domain/entity"
@@ -26,6 +27,11 @@ func main() {
 	//	AllowOrigins: []string{"http://localhost:4200"},
 	//}))
 	server.Use(CORSMiddleware())
+	//	server.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	p := ginprometheus.NewPrometheus("gin")
+	p.Use(server)
+
 	user := server.Group("/user")
 	{
 		user.POST("/register", Controller.SignUp)
