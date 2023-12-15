@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	"github.com/zsais/go-gin-prometheus"
 	"project/app/controller"
 	"project/source/app/services"
@@ -13,11 +14,14 @@ import (
 
 var (
 	//productService repositories.Repository = repositories.New()
-
+	redisClient = redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+		DB:   0,
+	})
 	cfg                   = entity.GetConfig()
 	postgreSQLClient, err = postgresql.NewClient(context.TODO(), 3, cfg.Storage)
 	repository            = repositories.New(postgreSQLClient)
-	service               = services.NewService(&repository)
+	service               = services.NewService(&repository, redisClient)
 	Controller            = controller.New(*service)
 )
 

@@ -1,17 +1,20 @@
 package services
 
 import (
+	"github.com/go-redis/redis/v8"
 	"project/source/domain/entity"
 	"project/source/infrastructure/repositories"
 )
 
 type Service struct {
-	Repository repositories.UserRepository
+	Repository  repositories.UserRepository
+	RedisClient *redis.Client // Добавляем клиент Redis
 }
 
-func NewService(repo repositories.UserRepository) *Service {
+func NewService(repo repositories.UserRepository, redisClient *redis.Client) *Service {
 	return &Service{
-		Repository: repo,
+		Repository:  repo,
+		RedisClient: redisClient, // Инициализируем клиент Redis
 	}
 }
 
