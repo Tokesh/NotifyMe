@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc"
+	"log"
 	"net/http"
+	pb "project/proto"
 	"project/source/app/services"
 	"project/source/domain/entity"
 	"project/source/infrastructure/utils"
@@ -54,19 +56,19 @@ func ValidateSignUpBody(body SignUpBody) error {
 	}
 
 	// Проверка адреса электронной почты
-	if !regexp.MustCompile(`^\S+@\S+\.\S+$`).MatchString(body.UserEmail) {
-		return fmt.Errorf("invalid email format")
-	}
+	//if !regexp.MustCompile(`^\S+@\S+\.\S+$`).MatchString(body.UserEmail) {
+	//	return fmt.Errorf("invalid email format")
+	//}
 
 	// Проверка пароля
-	if len(body.Password) < 6 {
-		return fmt.Errorf("password must be at least 6 characters long")
-	}
+	//if len(body.Password) < 6 {
+	//	return fmt.Errorf("password must be at least 6 characters long")
+	//}
 
 	// Проверка статуса активации
-	if body.ActivationStatus != "active" && body.ActivationStatus != "inactive" {
-		return fmt.Errorf("invalid activation status")
-	}
+	//if body.ActivationStatus != "active" && body.ActivationStatus != "inactive" {
+	//	return fmt.Errorf("invalid activation status")
+	//}
 
 	// Проверка статуса (можно добавить конкретные условия в зависимости от вашего приложения)
 
@@ -83,21 +85,31 @@ func (c *Controller) SignUp(ctx *gin.Context) {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+
+	const address = "localhost:50051"
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		log.Fatalf("Не удалось подключиться: %v", err)
+	}
+	defer conn.Close()
+	client := pb.NewYourServiceClient(conn)
+	fmt.Println(body.Password)
+	fmt.Println(body.Username)
+	// Выполнение gRPC запроса на регистрацию
+	response, err := client.Register(ctx, &pb.YourRegistrationRequest{
+		Login:    body.Username,
+		Password: body.Password,
+		// Добавьте другие необходимые поля
+	})
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	user := entity.User{0, body.Username, body.UserEmail,
-		string(hash), body.ActivationStatus, body.Status}
-	err = c.Service.SignUpService(user)
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
 	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"message": "created",
+		"message": response.GetMessage(),
 	})
 }
 
@@ -105,46 +117,42 @@ func (c *Controller) Login(ctx *gin.Context) {
 	err := ctx.BindJSON(&body)
 	if err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		fmt.Printf("2")
 		return
 	}
 
 	user := entity.User{0, body.Username, body.UserEmail,
 		body.Password, body.ActivationStatus, body.Status}
-	user, err = c.Service.FindUserId(user)
+	user, _ = c.Service.FindUserId(user)
 
+	const address = "localhost:50051"
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusNotFound, "User not found or incorrect credentials")
-		return
+		log.Fatalf("Не удалось подключиться: %v", err)
 	}
-	user, err = c.Service.FindUserPass(user)
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
+	defer conn.Close()
+	client := pb.NewYourServiceClient(conn)
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.UserID,
-		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
+	// Выполнение gRPC запроса
+	fmt.Println(body.Username)
+	fmt.Println(body.Password)
+	response, err := client.Login(ctx, &pb.YourLoginRequest{
+		Login:    body.Username, // Замените на ваше имя пользователя
+		Password: body.Password, // Замените на ваш пароль
 	})
-	tokenString, err := token.SignedString([]byte("sdff32dsadsadsdsds34sr2134rewtFSFSFSFASFASFASFASFASFASFASF3t2sra"))
 	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
+		//log.Fatalf("Ошибка при выполнении запроса: %v", err)
+		ctx.JSON(http.StatusBadRequest, map[string]interface{}{
+			"token": err.Error(),
+		})
 
-	ctx.SetSameSite(http.SameSiteLaxMode)
-	ctx.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+	}
+	log.Printf("Ответ от сервера: %s", response.GetMessage())
 
 	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"token": tokenString,
+		"token": response.GetMessage(),
 	})
 }
-
 func (c *Controller) Validate(ctx *gin.Context) {
 	tokenString, err := ctx.Cookie("Authorization")
 	if err != nil {
