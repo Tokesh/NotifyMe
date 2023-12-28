@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"project/source/app/services"
-	"project/source/domain/entity"
 	"project/source/infrastructure/utils"
+	pb "project/your/go/package"
 	"regexp"
 	"time"
 )
@@ -23,11 +22,11 @@ var body struct {
 }
 
 type SignUpBody struct {
-	Username         string
-	UserEmail        string
-	Password         string
-	ActivationStatus string
-	Status           int
+	Username         string `json:"username"`
+	UserEmail        string `json:"user_email"`
+	Password         string `json:"user_password"`
+	ActivationStatus string `json:"user_activation_status"`
+	Status           int    `json:"status"`
 }
 
 type tokenBody struct {
@@ -35,12 +34,14 @@ type tokenBody struct {
 }
 
 type Controller struct {
-	Service services.Service
+	Service    services.Service
+	GRPCClient pb.YourServiceClient
 }
 
-func New(service services.Service) Controller {
+func New(service services.Service, grpcClient pb.YourServiceClient) Controller {
 	return Controller{
-		Service: service,
+		Service:    service,
+		GRPCClient: grpcClient,
 	}
 }
 
@@ -79,19 +80,26 @@ func (c *Controller) SignUp(ctx *gin.Context) {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, "Invalid request body")
 		return
 	}
+	fmt.Println(ctx.Request.Body)
 	if err := ValidateSignUpBody(body); err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
+	response, err := c.GRPCClient.Register(ctx, &pb.YourRegistrationRequest{
+		Login:    body.Username,
+		Password: body.Password,
+	})
 
-	user := entity.User{0, body.Username, body.UserEmail,
-		string(hash), body.ActivationStatus, body.Status}
-	err = c.Service.SignUpService(user)
+	fmt.Println(response)
+	//hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+	//if err != nil {
+	//	utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+	//	return
+	//}
+	//
+	//user := entity.User{0, body.Username, body.UserEmail,
+	//	string(hash), body.ActivationStatus, body.Status}
+	//err = c.Service.SignUpService(user)
 	if err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -108,41 +116,46 @@ func (c *Controller) Login(ctx *gin.Context) {
 		return
 	}
 
-	user := entity.User{0, body.Username, body.UserEmail,
-		body.Password, body.ActivationStatus, body.Status}
-	user, err = c.Service.FindUserId(user)
-
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusNotFound, "User not found or incorrect credentials")
-		return
-	}
-	user, err = c.Service.FindUserPass(user)
+	//user := entity.User{0, body.Username, body.UserEmail,
+	//	body.Password, body.ActivationStatus, body.Status}
+	response, err := c.GRPCClient.Login(ctx, &pb.YourLoginRequest{
+		Login:    body.Username,
+		Password: body.Password,
+	})
+	fmt.Println(response)
+	//user, err = c.Service.FindUserId(user)
+	//
+	//if err != nil {
+	//	utils.NewErrorResponse(ctx, http.StatusNotFound, "User not found or incorrect credentials")
+	//	return
+	//}
+	//user, err = c.Service.FindUserPass(user)
+	//if err != nil {
+	//	utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
+	//	return
+	//}
+	//err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
 		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.UserID,
-		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
-	})
-	tokenString, err := token.SignedString([]byte("sdff32dsadsadsdsds34sr2134rewtFSFSFSFASFASFASFASFASFASFASF3t2sra"))
-	if err != nil {
-		utils.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	ctx.SetSameSite(http.SameSiteLaxMode)
-	ctx.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
-
-	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"token": tokenString,
-	})
+	//
+	//token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	//	"sub": user.UserID,
+	//	"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
+	//})
+	//tokenString, err := token.SignedString([]byte("sdff32dsadsadsdsds34sr2134rewtFSFSFSFASFASFASFASFASFASFASF3t2sra"))
+	//if err != nil {
+	//	utils.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+	//	return
+	//}
+	//
+	//ctx.SetSameSite(http.SameSiteLaxMode)
+	//ctx.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+	//
+	//ctx.JSON(http.StatusOK, map[string]interface{}{
+	//	"token": tokenString,
+	//})
 }
 
 func (c *Controller) Validate(ctx *gin.Context) {

@@ -5,16 +5,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/zsais/go-gin-prometheus"
+	"google.golang.org/grpc"
 	"project/app/controller"
 	"project/source/app/services"
 	"project/source/domain/entity"
 	"project/source/infrastructure/postgresql"
 	"project/source/infrastructure/repositories"
+	pb "project/your/go/package"
 )
 
 var (
 	//productService repositories.Repository = repositories.New()
-	redisClient = redis.NewClient(&redis.Options{
+	grpcClient, _ = createGRPCClient("localhost:50051")
+	redisClient   = redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 		DB:   0,
 	})
@@ -22,8 +25,16 @@ var (
 	postgreSQLClient, err = postgresql.NewClient(context.TODO(), 3, cfg.Storage)
 	repository            = repositories.New(postgreSQLClient)
 	service               = services.NewService(&repository, redisClient)
-	Controller            = controller.New(*service)
+	Controller            = controller.New(*service, grpcClient)
 )
+
+func createGRPCClient(serverAddress string) (pb.YourServiceClient, error) {
+	conn, err := grpc.Dial(serverAddress, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	return pb.NewYourServiceClient(conn), nil
+}
 
 func main() {
 	server := gin.Default()

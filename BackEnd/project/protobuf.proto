@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package ProStoreGolang;
+
+// Задайте пакет Go, который соответствует вашему проекту
+option go_package = "your/go/package";
+
+// Определение сообщения для запроса логина
+message YourLoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+// Определение сообщения для ответа логина
+message YourLoginResponse {
+  string message = 1; // Например, токен или сообщение об успешном входе
+}
+
+// Определение сообщения для запроса регистрации
+message YourRegistrationRequest {
+  string login = 1;
+  string password = 2;
+  // Дополнительные поля, такие как email, имя пользователя и т.д.
+  // string email = 3;
+}
+
+// Определение сообщения для ответа регистрации
+message YourRegistrationResponse {
+  string message = 1; // Сообщение об успешной регистрации или ошибке
+}
+
+// Определение сервиса, включающего методы логина и регистрации
+service YourService {
+  rpc Login (YourLoginRequest) returns (YourLoginResponse);
+  rpc Register (YourRegistrationRequest) returns (YourRegistrationResponse);
+}
