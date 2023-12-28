@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package ProStoreGolang;
+
+option go_package = "your/go/package";
+
+// Existing Login Request message
+message YourLoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+// Existing Login Response message
+message YourLoginResponse {
+  string message = 1;
+}
+
+// New Registration Request message
+message YourRegistrationRequest {
+  string login = 1;
+  string password = 2;
+  // Other registration fields can be added here
+}
+
+// New Registration Response message
+message YourRegistrationResponse {
+  string message = 1;
+  // You might want to add additional fields such as status, user ID, etc.
+}
+
+// Existing Service Definition
+service YourService {
+  rpc Login (YourLoginRequest) returns (YourLoginResponse);
+
+  // New Registration RPC
+  rpc Register (YourRegistrationRequest) returns (YourRegistrationResponse);
+}
